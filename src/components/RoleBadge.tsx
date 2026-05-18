@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Shield, ShieldCheck } from "lucide-react";
+import { Shield, ShieldCheck, User } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 export type AppRole = Database["public"]["Enums"]["app_role"];
@@ -46,7 +46,14 @@ const RoleBadge = ({ role, size = "sm" }: RoleBadgeProps) => {
       </Badge>
     );
   }
-  return null;
+  return (
+    <Badge
+      className={`bg-muted/40 text-muted-foreground hover:bg-muted/60 border-border font-display ${sizing}`}
+    >
+      <User className={iconSize} />
+      User
+    </Badge>
+  );
 };
 
 export default RoleBadge;

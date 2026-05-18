@@ -41,6 +41,65 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_votes: {
         Row: {
           created_at: string
@@ -75,6 +134,12 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          spec_cpu: string | null
+          spec_gpu: string | null
+          spec_os: string | null
+          spec_ram: string | null
+          spec_storage: string | null
+          specs: string | null
           updated_at: string
           user_id: string
           username: string
@@ -88,6 +153,12 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          spec_cpu?: string | null
+          spec_gpu?: string | null
+          spec_os?: string | null
+          spec_ram?: string | null
+          spec_storage?: string | null
+          specs?: string | null
           updated_at?: string
           user_id: string
           username: string
@@ -101,6 +172,12 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          spec_cpu?: string | null
+          spec_gpu?: string | null
+          spec_os?: string | null
+          spec_ram?: string | null
+          spec_storage?: string | null
+          specs?: string | null
           updated_at?: string
           user_id?: string
           username?: string
@@ -157,11 +234,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_or_create_conversation: {
+        Args: { _other_user: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_conversation_participant: {
+        Args: { _conv: string; _user: string }
         Returns: boolean
       }
     }

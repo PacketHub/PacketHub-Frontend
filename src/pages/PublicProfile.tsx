@@ -7,13 +7,15 @@ import RoleBadge from "@/components/RoleBadge";
 import { useUserRoleByUsername } from "@/hooks/useUserRole";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageSquare, User } from "lucide-react";
+import { ArrowLeft, MessageSquare, User, Send, Cpu, MemoryStick, HardDrive, MonitorSmartphone, Gamepad2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { getPosts } from "@/lib/store";
 import type { ForumPost } from "@/lib/types";
 import type { Tables } from "@/integrations/supabase/types";
 
 const PublicProfile = () => {
   const { username } = useParams<{ username: string }>();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -104,21 +106,35 @@ const PublicProfile = () => {
 
             {/* Profile info */}
             <div className="space-y-6">
-              <div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <p className="font-display text-2xl font-semibold text-foreground">
-                    {displayName}
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="font-display text-2xl font-semibold text-foreground">
+                      {displayName}
+                    </p>
+                    {topRole && topRole !== "user" ? (
+                      <RoleBadge role={topRole} size="md" />
+                    ) : null}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    @{profile?.username}
+                    {profile?.created_at
+                      ? ` · Member since ${new Date(profile.created_at).toLocaleDateString()}`
+                      : ""}
                   </p>
-                  {topRole && topRole !== "user" ? (
-                    <RoleBadge role={topRole} size="md" />
-                  ) : null}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  @{profile?.username}
-                  {profile?.created_at
-                    ? ` · Member since ${new Date(profile.created_at).toLocaleDateString()}`
-                    : ""}
-                </p>
+                {user && profile && user.id !== profile.user_id && (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="gap-1.5 font-display text-xs"
+                  >
+                    <Link to={`/messages?to=${profile.username}`}>
+                      <Send className="h-3.5 w-3.5" />
+                      Message
+                    </Link>
+                  </Button>
+                )}
               </div>
 
               <div className="glass rounded-xl border border-border p-6">
@@ -135,6 +151,49 @@ const PublicProfile = () => {
                   </p>
                 )}
               </div>
+
+              {(() => {
+                const p = profile as unknown as Record<string, string | null> | null;
+                const specs = [
+                  { key: "spec_cpu", label: "CPU", icon: Cpu, value: p?.spec_cpu },
+                  { key: "spec_gpu", label: "GPU", icon: Gamepad2, value: p?.spec_gpu },
+                  { key: "spec_ram", label: "RAM", icon: MemoryStick, value: p?.spec_ram },
+                  { key: "spec_storage", label: "Storage", icon: HardDrive, value: p?.spec_storage },
+                  { key: "spec_os", label: "OS", icon: MonitorSmartphone, value: p?.spec_os },
+                ].filter((s) => (s.value ?? "").trim().length > 0);
+                if (specs.length === 0) return null;
+                return (
+                  <div className="glass rounded-xl border border-border p-6">
+                    <h2 className="flex items-center gap-2 font-display text-sm font-semibold text-foreground">
+                      <Cpu className="h-4 w-4 text-primary" />
+                      Rig / Specs
+                    </h2>
+                    <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {specs.map((s) => {
+                        const Icon = s.icon;
+                        return (
+                          <div
+                            key={s.key}
+                            className="flex items-start gap-3 rounded-lg border border-border/60 bg-secondary/40 p-3"
+                          >
+                            <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <dt className="font-display text-[11px] uppercase tracking-wide text-muted-foreground">
+                                {s.label}
+                              </dt>
+                              <dd className="mt-0.5 break-words font-mono text-xs text-foreground">
+                                {s.value}
+                              </dd>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </dl>
+                  </div>
+                );
+              })()}
 
               {/* Posts by this user */}
               <div className="space-y-3">

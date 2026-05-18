@@ -13,6 +13,7 @@ interface ProfileData {
   avatar_url: string | null;
   banner_url: string | null;
   bio: string | null;
+  created_at: string | null;
 }
 
 interface ProfileHoverCardProps {
@@ -24,14 +25,15 @@ interface ProfileHoverCardProps {
 
 const ProfileHoverCard = ({ username, children, initialProfile }: ProfileHoverCardProps) => {
   const [profile, setProfile] = useState<ProfileData | null>(
-    initialProfile && initialProfile.user_id
+    initialProfile && initialProfile.username
       ? {
-          user_id: initialProfile.user_id,
+          user_id: initialProfile.user_id ?? "",
           username: initialProfile.username ?? username,
           display_name: initialProfile.display_name ?? null,
           avatar_url: initialProfile.avatar_url ?? null,
           banner_url: initialProfile.banner_url ?? null,
           bio: initialProfile.bio ?? null,
+          created_at: initialProfile.created_at ?? null,
         }
       : null
   );
@@ -48,7 +50,7 @@ const ProfileHoverCard = ({ username, children, initialProfile }: ProfileHoverCa
     if (!profile) {
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, username, display_name, avatar_url, banner_url, bio")
+        .select("user_id, username, display_name, avatar_url, banner_url, bio, created_at")
         .eq("username", username)
         .maybeSingle();
       if (data) {
@@ -115,6 +117,15 @@ const ProfileHoverCard = ({ username, children, initialProfile }: ProfileHoverCa
           ) : (
             <p className="mt-3 text-xs text-muted-foreground/70">Loading…</p>
           )}
+
+          {profile?.created_at ? (
+            <p className="mt-3 text-[11px] text-muted-foreground/80">
+              Joined {new Date(profile.created_at).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+          ) : null}
         </div>
       </HoverCardContent>
     </HoverCard>

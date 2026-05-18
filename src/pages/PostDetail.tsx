@@ -128,7 +128,7 @@ const PostDetail = () => {
     const fetchAuthor = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("username, display_name, avatar_url, avatar_is_animated, banner_url, banner_is_animated, bio")
+        .select("user_id, username, display_name, avatar_url, avatar_is_animated, banner_url, banner_is_animated, bio, created_at")
         .eq("username", post.author)
         .maybeSingle();
       if (data) setAuthorProfile(data);

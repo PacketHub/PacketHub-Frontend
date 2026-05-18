@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Camera, Upload, Save, User, KeyRound, Mail, AtSign } from "lucide-react";
+import { Camera, Upload, Save, User, KeyRound, Mail, AtSign, Cpu } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 const ACCEPTED_IMAGE_TYPES = "image/png,image/jpeg,image/webp,image/gif";
@@ -22,6 +22,11 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [specCpu, setSpecCpu] = useState("");
+  const [specGpu, setSpecGpu] = useState("");
+  const [specRam, setSpecRam] = useState("");
+  const [specStorage, setSpecStorage] = useState("");
+  const [specOs, setSpecOs] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -58,6 +63,12 @@ const Profile = () => {
       setDisplayName(data.display_name ?? "");
       setUsername(data.username ?? "");
       setBio(data.bio ?? "");
+      const p = data as unknown as Record<string, string | null>;
+      setSpecCpu(p.spec_cpu ?? "");
+      setSpecGpu(p.spec_gpu ?? "");
+      setSpecRam(p.spec_ram ?? "");
+      setSpecStorage(p.spec_storage ?? "");
+      setSpecOs(p.spec_os ?? "");
     }
   };
 
@@ -74,7 +85,12 @@ const Profile = () => {
         display_name: displayName.trim(),
         username: username.trim(),
         bio: bio.trim(),
-      })
+        spec_cpu: specCpu.trim() || null,
+        spec_gpu: specGpu.trim() || null,
+        spec_ram: specRam.trim() || null,
+        spec_storage: specStorage.trim() || null,
+        spec_os: specOs.trim() || null,
+      } as never)
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
@@ -184,36 +200,39 @@ const Profile = () => {
       <Header />
       <main className="container max-w-3xl py-8 animate-fade-in">
         {/* Banner */}
-        <div className="relative mb-16 h-48 overflow-hidden rounded-xl border border-border bg-secondary md:h-56">
-          {profile?.banner_url ? (
-            <img
-              src={profile.banner_url}
-              alt="Banner"
-              className="h-full w-full object-cover"
+        <div className="relative mb-16 h-48 md:h-56">
+          <div className="relative h-full w-full overflow-hidden rounded-xl border border-border bg-secondary">
+            {profile?.banner_url ? (
+              <img
+                src={profile.banner_url}
+                alt="Banner"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="font-display text-sm text-muted-foreground">No banner yet</p>
+              </div>
+            )}
+            <button
+              onClick={() => bannerInputRef.current?.click()}
+              disabled={uploadingBanner}
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-1.5 font-display text-xs text-foreground backdrop-blur-sm transition-colors hover:bg-card"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              {uploadingBanner ? "Uploading..." : "Change Banner"}
+            </button>
+            <input
+              ref={bannerInputRef}
+              type="file"
+              accept={ACCEPTED_IMAGE_TYPES}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadFile(file, "banners", setUploadingBanner);
+              }}
             />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p className="font-display text-sm text-muted-foreground">No banner yet</p>
-            </div>
-          )}
-          <button
-            onClick={() => bannerInputRef.current?.click()}
-            disabled={uploadingBanner}
-            className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-1.5 font-display text-xs text-foreground backdrop-blur-sm transition-colors hover:bg-card"
-          >
-            <Upload className="h-3.5 w-3.5" />
-            {uploadingBanner ? "Uploading..." : "Change Banner"}
-          </button>
-          <input
-            ref={bannerInputRef}
-            type="file"
-            accept={ACCEPTED_IMAGE_TYPES}
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) uploadFile(file, "banners", setUploadingBanner);
-            }}
-          />
+          </div>
+
 
           {/* Avatar overlapping banner */}
           <div className="absolute -bottom-12 left-6">
@@ -313,6 +332,39 @@ const Profile = () => {
                 rows={4}
                 className="bg-secondary border-border resize-none"
               />
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-border/60 bg-secondary/30 p-4">
+              <h3 className="flex items-center gap-1.5 font-display text-sm font-semibold text-foreground">
+                <Cpu className="h-3.5 w-3.5 text-primary" />
+                PC / Laptop Specs
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  { id: "spec_cpu", label: "CPU", value: specCpu, setter: setSpecCpu, placeholder: "e.g. Ryzen 7 5800X" },
+                  { id: "spec_gpu", label: "GPU", value: specGpu, setter: setSpecGpu, placeholder: "e.g. RTX 4070" },
+                  { id: "spec_ram", label: "RAM", value: specRam, setter: setSpecRam, placeholder: "e.g. 32GB DDR4 3600" },
+                  { id: "spec_storage", label: "Storage", value: specStorage, setter: setSpecStorage, placeholder: "e.g. 1TB NVMe + 2TB HDD" },
+                  { id: "spec_os", label: "OS", value: specOs, setter: setSpecOs, placeholder: "e.g. Windows 11" },
+                ].map((f) => (
+                  <div key={f.id} className="space-y-1.5">
+                    <Label htmlFor={f.id} className="font-display text-xs text-muted-foreground">
+                      {f.label}
+                    </Label>
+                    <Input
+                      id={f.id}
+                      value={f.value}
+                      onChange={(e) => f.setter(e.target.value)}
+                      placeholder={f.placeholder}
+                      maxLength={120}
+                      className="bg-background border-border"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Leave any field blank to hide it on your public profile.
+              </p>
             </div>
 
             <Button

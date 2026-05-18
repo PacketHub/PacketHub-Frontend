@@ -22,9 +22,7 @@ const AuthorNameWithRole = ({
   return (
     <span className={`inline-flex items-center gap-1.5 ${className ?? ""}`}>
       <span>{displayName || username}</span>
-      {topRole && topRole !== "user" ? (
-        <RoleBadge role={topRole} size={badgeSize} />
-      ) : null}
+      <RoleBadge role={topRole ?? "user"} size={badgeSize} />
     </span>
   );
 };

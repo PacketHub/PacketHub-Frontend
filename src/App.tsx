@@ -13,6 +13,8 @@ import Signup from "./pages/Signup.tsx";
 import Profile from "./pages/Profile.tsx";
 import PublicProfile from "./pages/PublicProfile.tsx";
 import Admin from "./pages/Admin.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
+import Messages from "./pages/Messages.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,9 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/u/:username" element={<PublicProfile />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:conversationId" element={<Messages />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

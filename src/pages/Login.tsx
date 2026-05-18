@@ -7,12 +7,47 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { Mail, Lock, LogIn, Terminal, ArrowRight } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const openReset = () => {
+    setResetEmail(email);
+    setResetOpen(true);
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      toast.error("Enter your email");
+      return;
+    }
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Check your email for the reset link");
+      setResetOpen(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +152,14 @@ const Login = () => {
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
 
+              <button
+                type="button"
+                onClick={openReset}
+                className="block w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                Forgot your password?
+              </button>
+
               <p className="text-center text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <Link to="/signup" className="font-medium text-primary hover:underline">
@@ -126,6 +169,43 @@ const Login = () => {
             </form>
           </div>
         </div>
+
+        <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset your password</DialogTitle>
+              <DialogDescription>
+                Enter the email associated with your account and we'll send you a password reset link.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleResetSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email" className="font-display text-xs uppercase tracking-wider text-muted-foreground">
+                  Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={resetLoading}>
+                  {resetLoading ? "Sending…" : "Send reset link"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

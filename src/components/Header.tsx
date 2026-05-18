@@ -1,10 +1,13 @@
 import { Link, NavLink, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, LogIn, User, LogOut, Shield, Search, Home } from "lucide-react";
+import { Plus, LogIn, User, LogOut, Shield, Search, Home, MessageSquare } from "lucide-react";
 import { useUserRoleByUserId } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
 import RoleBadge from "@/components/RoleBadge";
 import logo from "@/assets/packethub-logo.png";
 import { cn } from "@/lib/utils";
@@ -21,6 +24,22 @@ const Header = () => {
   const { user, signOut } = useAuth();
   const { data: topRole } = useUserRoleByUserId(user?.id);
   const isAdmin = topRole === "admin";
+
+  // Cached profile fetch for the header avatar
+  const { data: profile } = useQuery({
+    queryKey: ["header-profile", user?.id],
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("username, display_name, avatar_url, banner_url, bio")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -71,11 +90,7 @@ const Header = () => {
         </Link>
 
         {/* Nav links with active state */}
-        <nav className="hidden items-center gap-1 md:flex">
-          <NavLink to="/" end className={navLinkClass}>
-            <Home className="h-3.5 w-3.5" />
-            Home
-          </NavLink>
+        <nav className="hidden items-center gap-1 md:flex -ml-1">
           {isAdmin && (
             <NavLink to="/admin" className={navLinkClass}>
               <Shield className="h-3.5 w-3.5" />
@@ -84,10 +99,10 @@ const Header = () => {
           )}
         </nav>
 
-        {/* Search bar */}
+        {/* Search bar - centered */}
         <form
           onSubmit={handleSearch}
-          className="relative ml-auto flex-1 max-w-sm md:ml-2"
+          className="relative mx-auto w-full max-w-md"
           role="search"
         >
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -101,7 +116,7 @@ const Header = () => {
           />
         </form>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
           {user ? (
             <>
               <Link to="/new">
@@ -110,24 +125,100 @@ const Header = () => {
                   <span className="hidden sm:inline">New Post</span>
                 </Button>
               </Link>
+              <Link to="/messages" aria-label="Messages">
+                <Button size="icon" variant="ghost" className="h-9 w-9">
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9">
-                    <User className="h-4 w-4" />
-                  </Button>
+                  <button
+                    type="button"
+                    aria-label="Open profile menu"
+                    className="rounded-full ring-2 ring-transparent hover:ring-primary/40 focus-visible:outline-none focus-visible:ring-primary/60 transition"
+                  >
+                    <Avatar className="h-9 w-9 border border-border/40">
+                      {profile?.avatar_url ? (
+                        <AvatarImage src={profile.avatar_url} alt={userLabel} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary font-display text-sm">
+                        {(profile?.display_name || profile?.username || user.email || "?")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[12rem]">
-                  <DropdownMenuLabel className="flex items-center gap-2 font-normal">
-                    <span className="truncate text-sm">{userLabel}</span>
-                    {topRole && topRole !== "user" ? (
-                      <RoleBadge role={topRole} />
+                <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
+                  {/* Banner */}
+                  <div className="relative h-24 w-full bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10">
+                    {profile?.banner_url ? (
+                      <img
+                        src={profile.banner_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                     ) : null}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  </div>
+
+                  {/* Avatar overlapping banner */}
+                  <div className="px-4 -mt-10">
+                    <Avatar className="h-20 w-20 border-4 border-popover shadow-md">
+                      {profile?.avatar_url ? (
+                        <AvatarImage src={profile.avatar_url} alt={userLabel} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary font-display text-xl">
+                        {(profile?.display_name || profile?.username || user.email || "?")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+
+                  {/* Identity */}
+                  <div className="px-4 pt-2 pb-3">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-display text-base font-semibold text-foreground truncate">
+                        {profile?.display_name || profile?.username || userLabel}
+                      </p>
+                      {topRole && topRole !== "user" ? (
+                        <RoleBadge role={topRole} />
+                      ) : null}
+                    </div>
+                    {profile?.username ? (
+                      <p className="text-xs text-muted-foreground truncate">
+                        @{profile.username}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {/* About me */}
+                  {profile?.bio ? (
+                    <div className="px-4 pb-3">
+                      <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase mb-1">
+                        About me
+                      </p>
+                      <p className="text-xs text-foreground/90 whitespace-pre-wrap break-words">
+                        {profile.bio}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <div className="border-t border-border/40" />
+
+                  {profile?.username ? (
+                    <DropdownMenuItem asChild>
+                      <Link to={`/u/${profile.username}`} className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        View public profile
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : null}
+
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      Profile
+                      Edit Profile
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin && (

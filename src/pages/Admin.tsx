@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Shield, Search, ShieldOff, ShieldCheck, ShieldPlus } from "lucide-react";
+import { Shield, Search, ShieldOff, ShieldCheck, ShieldPlus, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { AppRole } from "@/components/RoleBadge";
 import { pickTopRole } from "@/components/RoleBadge";
 import RoleAuditLog from "@/components/RoleAuditLog";
@@ -27,6 +38,13 @@ interface Profile {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  created_at: string;
+}
+
+interface AuthUser {
+  id: string;
+  email: string | null;
+  created_at: string;
 }
 
 interface RoleRow {
@@ -72,7 +90,7 @@ const Admin = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, username, display_name, avatar_url")
+        .select("user_id, username, display_name, avatar_url, created_at")
         .order("username", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Profile[];
@@ -91,9 +109,28 @@ const Admin = () => {
     },
   });
 
+  const authUsersQuery = useQuery<AuthUser[]>({
+    queryKey: ["admin", "auth_users"],
+    enabled: !!isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "list" },
+      });
+      if (error) throw error;
+      return (data?.users ?? []) as AuthUser[];
+    },
+  });
+
   const profiles = profilesQuery.data ?? [];
   const roles = rolesQuery.data ?? [];
+  const authUsers = authUsersQuery.data ?? [];
   const loading = profilesQuery.isLoading || rolesQuery.isLoading;
+
+  const emailByUser = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const u of authUsers) map.set(u.id, u.email);
+    return map;
+  }, [authUsers]);
 
   const rolesByUser = useMemo(() => {
     const map = new Map<string, AppRole[]>();
@@ -200,6 +237,24 @@ const Admin = () => {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string; username: string }) => {
+      const { error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "delete", userId },
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(`Deleted @${vars.username}`);
+      queryClient.invalidateQueries({ queryKey: ["admin", "profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "user_roles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "auth_users"] });
+    },
+    onError: (err) => {
+      toast.error((err as Error).message || "Failed to delete user");
+    },
+  });
+
   const grantRole = (p: Profile, role: AppRole) => {
     const existing = rolesByUser.get(p.user_id) ?? [];
     if (existing.includes(role)) {
@@ -265,21 +320,24 @@ const Admin = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Joined</TableHead>
                 <TableHead>Roles</TableHead>
-                <TableHead className="w-[180px]">Moderator</TableHead>
-                <TableHead className="w-[180px] text-right">Admin</TableHead>
+                <TableHead className="w-[150px]">Moderator</TableHead>
+                <TableHead className="w-[150px]">Admin</TableHead>
+                <TableHead className="w-[80px] text-right">Delete</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
                     Loading users…
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
                     No users found
                   </TableCell>
                 </TableRow>
@@ -312,6 +370,12 @@ const Admin = () => {
                             </div>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {emailByUser.get(p.user_id) ?? (authUsersQuery.isLoading ? "…" : "—")}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(p.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1.5">
@@ -365,7 +429,7 @@ const Admin = () => {
                           </Button>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>
                         {hasAdmin ? (
                           <Button
                             size="sm"
@@ -389,6 +453,43 @@ const Admin = () => {
                             Make admin
                           </Button>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={isSelf || deleteUserMutation.isPending}
+                              title={isSelf ? "You cannot delete yourself" : "Delete account"}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete @{p.username}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This permanently removes the account, profile, and roles. Their posts and comments will remain but become orphaned. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() =>
+                                  deleteUserMutation.mutate({
+                                    userId: p.user_id,
+                                    username: p.username,
+                                  })
+                                }
+                              >
+                                Delete account
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   );
