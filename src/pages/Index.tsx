@@ -6,9 +6,10 @@ import Header from "@/components/Header";
 import PostCard from "@/components/PostCard";
 import CategoryFilter from "@/components/CategoryFilter";
 
-
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const posts = getPosts();
@@ -39,7 +40,8 @@ const Index = () => {
             Welcome to <span className="text-primary">PacketHub</span>
           </h1>
           <p className="mt-2 max-w-xl text-muted-foreground">
-            A beginner-friendly forum for IT enthusiasts. Ask questions, share knowledge, and learn together.
+            A beginner-friendly forum for IT enthusiasts. Ask questions, share
+            knowledge, and learn together.
           </p>
         </div>
 
@@ -47,14 +49,19 @@ const Index = () => {
 
         {/* Filter */}
         <div className="mb-8">
-          <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
+          <CategoryFilter
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
         </div>
 
         {/* Posts */}
         <div className="space-y-4">
           {filtered.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border p-12 text-center">
-              <p className="font-display text-muted-foreground">No posts found.</p>
+              <p className="font-display text-muted-foreground">
+                No posts found.
+              </p>
             </div>
           ) : (
             filtered.map((post) => <PostCard key={post.id} post={post} />)

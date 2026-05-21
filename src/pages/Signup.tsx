@@ -27,7 +27,9 @@ const Signup = () => {
       return;
     }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      toast.error("Username can only contain letters, numbers, and underscores");
+      toast.error(
+        "Username can only contain letters, numbers, and underscores",
+      );
       return;
     }
 
@@ -66,21 +68,28 @@ const Signup = () => {
                 PH
               </div>
               <h2 className="mt-6 font-display text-2xl font-bold text-foreground">
-                Join the<br />
-                <span className="text-primary">PacketHub</span> community
+                Join the
+                <br />
+                <span className="text-primary">PacketHub</span>
+                community
               </h2>
               <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                Connect with IT enthusiasts, share your knowledge, and level up your skills.
+                Connect with IT enthusiasts, share your knowledge, and level up
+                your skills.
               </p>
             </div>
             <div className="relative z-10 space-y-3">
               <div className="flex items-center gap-3 rounded-lg glass-subtle px-4 py-3">
                 <Cpu className="h-5 w-5 text-primary" />
-                <span className="text-xs text-muted-foreground">Hardware, networking, and OS discussions</span>
+                <span className="text-xs text-muted-foreground">
+                  Hardware, networking, and OS discussions
+                </span>
               </div>
               <div className="flex items-center gap-3 rounded-lg glass-subtle px-4 py-3">
                 <Shield className="h-5 w-5 text-primary" />
-                <span className="text-xs text-muted-foreground">Safe space for beginners and experts</span>
+                <span className="text-xs text-muted-foreground">
+                  Safe space for beginners and experts
+                </span>
               </div>
             </div>
           </div>
@@ -92,13 +101,20 @@ const Signup = () => {
                 PH
               </div>
             </div>
-            <h1 className="font-display text-xl font-bold text-foreground">Create Account</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Fill in your details to get started</p>
+            <h1 className="font-display text-xl font-bold text-foreground">
+              Create Account
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Fill in your details to get started
+            </p>
 
             <form onSubmit={handleSignup} className="mt-6 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="font-display text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="username"
+                    className="font-display text-xs uppercase tracking-wider text-muted-foreground"
+                  >
                     Username *
                   </Label>
                   <div className="relative">
@@ -115,7 +131,10 @@ const Signup = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="displayName" className="font-display text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="displayName"
+                    className="font-display text-xs uppercase tracking-wider text-muted-foreground"
+                  >
                     Display Name
                   </Label>
                   <Input
@@ -130,7 +149,10 @@ const Signup = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="font-display text-xs uppercase tracking-wider text-muted-foreground">
+                <Label
+                  htmlFor="email"
+                  className="font-display text-xs uppercase tracking-wider text-muted-foreground"
+                >
                   Email *
                 </Label>
                 <div className="relative">
@@ -147,7 +169,10 @@ const Signup = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="font-display text-xs uppercase tracking-wider text-muted-foreground">
+                <Label
+                  htmlFor="password"
+                  className="font-display text-xs uppercase tracking-wider text-muted-foreground"
+                >
                   Password *
                 </Label>
                 <div className="relative">
@@ -161,7 +186,9 @@ const Signup = () => {
                     className="glass-subtle border-border/40 pl-10 focus:border-primary/50"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+                <p className="text-xs text-muted-foreground">
+                  Minimum 6 characters
+                </p>
               </div>
 
               <Button
@@ -175,7 +202,10 @@ const Signup = () => {
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link to="/login" className="font-medium text-primary hover:underline">
+                <Link
+                  to="/login"
+                  className="font-medium text-primary hover:underline"
+                >
                   Sign in
                 </Link>
               </p>

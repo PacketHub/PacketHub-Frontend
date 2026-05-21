@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Shield, Search, ShieldOff, ShieldCheck, ShieldPlus, Trash2 } from "lucide-react";
+import {
+  Shield,
+  Search,
+  ShieldOff,
+  ShieldCheck,
+  ShieldPlus,
+  Trash2,
+} from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -170,7 +177,10 @@ const Admin = () => {
       const others = list.filter((r) => r.user_id !== userId);
       const mine = list.filter((r) => r.user_id === userId).map((r) => r.role);
       const next = update(mine);
-      const nextRows: RoleRow[] = next.map((role) => ({ user_id: userId, role }));
+      const nextRows: RoleRow[] = next.map((role) => ({
+        user_id: userId,
+        role,
+      }));
       return [...others, ...nextRows];
     });
   };
@@ -184,7 +194,10 @@ const Admin = () => {
     },
     onMutate: async ({ userId, role }) => {
       await queryClient.cancelQueries({ queryKey: ["admin", "user_roles"] });
-      const previous = queryClient.getQueryData<RoleRow[]>(["admin", "user_roles"]);
+      const previous = queryClient.getQueryData<RoleRow[]>([
+        "admin",
+        "user_roles",
+      ]);
       optimisticUpdateRoles(userId, (current) =>
         current.includes(role) ? current : [...current, role],
       );
@@ -217,8 +230,13 @@ const Admin = () => {
     },
     onMutate: async ({ userId, role }) => {
       await queryClient.cancelQueries({ queryKey: ["admin", "user_roles"] });
-      const previous = queryClient.getQueryData<RoleRow[]>(["admin", "user_roles"]);
-      optimisticUpdateRoles(userId, (current) => current.filter((r) => r !== role));
+      const previous = queryClient.getQueryData<RoleRow[]>([
+        "admin",
+        "user_roles",
+      ]);
+      optimisticUpdateRoles(userId, (current) =>
+        current.filter((r) => r !== role),
+      );
       return { previous };
     },
     onError: (err, _vars, ctx) => {
@@ -331,13 +349,19 @@ const Admin = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center text-sm text-muted-foreground py-8"
+                  >
                     Loading users…
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center text-sm text-muted-foreground py-8"
+                  >
                     No users found
                   </TableCell>
                 </TableRow>
@@ -355,14 +379,18 @@ const Admin = () => {
                           <Avatar className="h-9 w-9">
                             <AvatarImage src={p.avatar_url ?? undefined} />
                             <AvatarFallback>
-                              {(p.display_name ?? p.username).charAt(0).toUpperCase()}
+                              {(p.display_name ?? p.username)
+                                .charAt(0)
+                                .toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
                             <div className="font-medium text-sm truncate">
                               {p.display_name ?? p.username}
                               {isSelf && (
-                                <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                  (you)
+                                </span>
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground truncate">
@@ -372,7 +400,8 @@ const Admin = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {emailByUser.get(p.user_id) ?? (authUsersQuery.isLoading ? "…" : "—")}
+                        {emailByUser.get(p.user_id) ??
+                          (authUsersQuery.isLoading ? "…" : "—")}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(p.created_at).toLocaleDateString()}
@@ -462,16 +491,25 @@ const Admin = () => {
                               variant="ghost"
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               disabled={isSelf || deleteUserMutation.isPending}
-                              title={isSelf ? "You cannot delete yourself" : "Delete account"}
+                              title={
+                                isSelf
+                                  ? "You cannot delete yourself"
+                                  : "Delete account"
+                              }
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete @{p.username}?</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Delete @{p.username}?
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
-                                This permanently removes the account, profile, and roles. Their posts and comments will remain but become orphaned. This action cannot be undone.
+                                This permanently removes the account, profile,
+                                and roles. Their posts and comments will remain
+                                but become orphaned. This action cannot be
+                                undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
