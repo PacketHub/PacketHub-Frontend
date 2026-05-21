@@ -1,16 +1,19 @@
 import { Badge } from "@/components/ui/badge";
 import { Shield, ShieldCheck, User } from "lucide-react";
-import type { Database } from "@/integrations/supabase/types";
 
-export type AppRole = Database["public"]["Enums"]["app_role"];
+export type AppRole = "admin" | "moderator" | "user";
 
-const ROLE_PRIORITY: Record<AppRole, number> = { admin: 3, moderator: 2, user: 1 };
+const ROLE_PRIORITY: Record<AppRole, number> = {
+  admin: 3,
+  moderator: 2,
+  user: 1,
+};
 
 export const pickTopRole = (roles: AppRole[]): AppRole | null => {
   if (!roles.length) return null;
   return roles.reduce(
     (best, r) => (ROLE_PRIORITY[r] > ROLE_PRIORITY[best] ? r : best),
-    roles[0]
+    roles[0],
   );
 };
 

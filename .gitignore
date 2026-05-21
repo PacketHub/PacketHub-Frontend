@@ -1,0 +1,38 @@
+# Node dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local environment files
+.env
+.env.*
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite
+.vite/
+
+# IDE/editor directories
+.vscode/
+.idea/
+
+# macOS files
+.DS_Store
+
+# Generated files
+package-lock.json
+bun.lockb
+
+# Docker
+docker-compose.override.yml
+
+# Tests
+coverage/
+
+# Misc
+*.local

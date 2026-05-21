@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Category, CATEGORY_LABELS } from "@/lib/types";
 import { createPost, updatePost } from "@/lib/store";
@@ -14,12 +14,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 
 const categories: Category[] = [
-  "networking", "hardware", "programming", "os",
-  "overclocking", "hackintosh", "bios", "troubleshooting",
+  "networking",
+  "hardware",
+  "programming",
+  "os",
+  "overclocking",
+  "hackintosh",
+  "bios",
+  "troubleshooting",
 ];
 
 interface PostFormProps {
@@ -35,34 +39,12 @@ interface PostFormProps {
 
 const PostForm = ({ mode, initialData }: PostFormProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [content, setContent] = useState(initialData?.content ?? "");
-  const [category, setCategory] = useState<Category | "">(initialData?.category ?? "");
+  const [category, setCategory] = useState<Category | "">(
+    initialData?.category ?? "",
+  );
   const [author, setAuthor] = useState(initialData?.author ?? "");
-
-  // Auto-fill author from the logged-in user's profile on create
-  useEffect(() => {
-    if (mode !== "create" || !user) return;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("username, display_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      const name =
-        data?.username ||
-        data?.display_name ||
-        user.email?.split("@")[0] ||
-        "";
-      setAuthor(name);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,11 +54,21 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
     }
 
     if (mode === "create") {
-      const post = createPost({ title: title.trim(), content: content.trim(), category, author: author.trim() });
+      const post = createPost({
+        title: title.trim(),
+        content: content.trim(),
+        category,
+        author: author.trim(),
+      });
       toast.success("Post created!");
       navigate(`/post/${post.id}`);
     } else if (initialData) {
-      updatePost(initialData.id, { title: title.trim(), content: content.trim(), category, author: author.trim() });
+      updatePost(initialData.id, {
+        title: title.trim(),
+        content: content.trim(),
+        category,
+        author: author.trim(),
+      });
       toast.success("Post updated!");
       navigate(`/post/${initialData.id}`);
     }
@@ -85,7 +77,9 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="title" className="font-display text-sm">Title</Label>
+        <Label htmlFor="title" className="font-display text-sm">
+          Title
+        </Label>
         <Input
           id="title"
           placeholder="What's your question or topic?"
@@ -97,7 +91,9 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="author" className="font-display text-sm">Author Name</Label>
+        <Label htmlFor="author" className="font-display text-sm">
+          Author Name
+        </Label>
         <Input
           id="author"
           placeholder="Your display name"
@@ -105,19 +101,22 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
           onChange={(e) => setAuthor(e.target.value)}
           maxLength={50}
           className="bg-secondary border-border"
-          disabled
-          readOnly
         />
         {mode === "create" && (
           <p className="text-xs text-muted-foreground">
-            Posts are published under your account username.
+            Enter the name you want to show on the post.
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="category" className="font-display text-sm">Category</Label>
-        <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
+        <Label htmlFor="category" className="font-display text-sm">
+          Category
+        </Label>
+        <Select
+          value={category}
+          onValueChange={(v) => setCategory(v as Category)}
+        >
           <SelectTrigger className="bg-secondary border-border">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
@@ -132,7 +131,9 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="content" className="font-display text-sm">Content</Label>
+        <Label htmlFor="content" className="font-display text-sm">
+          Content
+        </Label>
         <Textarea
           id="content"
           placeholder="Describe your question or share your knowledge..."
@@ -148,7 +149,12 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
         <Button type="submit" className="font-display text-sm">
           {mode === "create" ? "Create Post" : "Save Changes"}
         </Button>
-        <Button type="button" variant="outline" onClick={() => navigate(-1)} className="font-display text-sm">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => navigate(-1)}
+          className="font-display text-sm"
+        >
           Cancel
         </Button>
       </div>
