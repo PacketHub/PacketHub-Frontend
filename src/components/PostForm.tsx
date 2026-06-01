@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { Category, CATEGORY_LABELS } from "@/lib/types";
-import { createPost, updatePost } from "@/lib/store";
+import { createPost as apiCreatePost, updatePost as apiUpdatePost } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,33 +47,54 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
   );
   const [author, setAuthor] = useState(initialData?.author ?? "");
 
+  // Mutations for API calls
+  const createMutation = useMutation({
+    mutationFn: () =>
+      apiCreatePost({
+        title: title.trim(),
+        content: content.trim(),
+        category: category as string,
+      }),
+    onSuccess: (post) => {
+      toast.success("Post created!");
+      navigate(`/post/${post.id}`);
+    },
+    onError: () => {
+      toast.error("Failed to create post");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      apiUpdatePost(initialData!.id, {
+        title: title.trim(),
+        content: content.trim(),
+        category: category as string,
+      }),
+    onSuccess: () => {
+      toast.success("Post updated!");
+      navigate(`/post/${initialData!.id}`);
+    },
+    onError: () => {
+      toast.error("Failed to update post");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !category || !author.trim()) {
+    if (!title.trim() || !content.trim() || !category) {
       toast.error("Please fill in all fields");
       return;
     }
 
     if (mode === "create") {
-      const post = createPost({
-        title: title.trim(),
-        content: content.trim(),
-        category,
-        author: author.trim(),
-      });
-      toast.success("Post created!");
-      navigate(`/post/${post.id}`);
+      createMutation.mutate();
     } else if (initialData) {
-      updatePost(initialData.id, {
-        title: title.trim(),
-        content: content.trim(),
-        category,
-        author: author.trim(),
-      });
-      toast.success("Post updated!");
-      navigate(`/post/${initialData.id}`);
+      updateMutation.mutate();
     }
   };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -86,27 +108,9 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={200}
+          disabled={isLoading}
           className="bg-secondary border-border"
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="author" className="font-display text-sm">
-          Author Name
-        </Label>
-        <Input
-          id="author"
-          placeholder="Your display name"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          maxLength={50}
-          className="bg-secondary border-border"
-        />
-        {mode === "create" && (
-          <p className="text-xs text-muted-foreground">
-            Enter the name you want to show on the post.
-          </p>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -116,6 +120,7 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
         <Select
           value={category}
           onValueChange={(v) => setCategory(v as Category)}
+          disabled={isLoading}
         >
           <SelectTrigger className="bg-secondary border-border">
             <SelectValue placeholder="Select a category" />
@@ -140,19 +145,25 @@ const PostForm = ({ mode, initialData }: PostFormProps) => {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           maxLength={5000}
+          disabled={isLoading}
           rows={8}
           className="bg-secondary border-border resize-none"
         />
       </div>
 
       <div className="flex gap-3">
-        <Button type="submit" className="font-display text-sm">
-          {mode === "create" ? "Create Post" : "Save Changes"}
+        <Button type="submit" disabled={isLoading} className="font-display text-sm">
+          {isLoading
+            ? "Saving..."
+            : mode === "create"
+              ? "Create Post"
+              : "Save Changes"}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => navigate(-1)}
+          disabled={isLoading}
           className="font-display text-sm"
         >
           Cancel

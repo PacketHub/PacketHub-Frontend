@@ -1,14 +1,32 @@
 import { useParams, Link } from "react-router-dom";
-import { getPost } from "@/lib/store";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPost } from "@/lib/api";
 import Header from "@/components/Header";
 import PostForm from "@/components/PostForm";
 import { Button } from "@/components/ui/button";
 
 const EditPost = () => {
   const { id } = useParams<{ id: string }>();
-  const post = id ? getPost(id) : undefined;
+  const { data: post, isLoading, error } = useQuery({
+    queryKey: ["post", id],
+    queryFn: () => (id ? fetchPost(id) : Promise.reject("No ID")),
+    enabled: !!id,
+  });
 
-  if (!post) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-16 text-center">
+          <p className="font-display text-lg text-muted-foreground">
+            Loading post...
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !post) {
     return (
       <div className="min-h-screen bg-background">
         <Header />

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getPosts } from "@/lib/store";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPosts } from "@/lib/api";
 import { Category } from "@/lib/types";
 import Header from "@/components/Header";
 import PostCard from "@/components/PostCard";
@@ -12,23 +13,26 @@ const Index = () => {
   );
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const posts = getPosts();
 
   // Sync local state when URL ?q= changes (e.g. from Header search)
   useEffect(() => {
     setSearch(searchParams.get("q") ?? "");
   }, [searchParams]);
 
+  // Fetch posts from backend
+  const { data: posts = [], isLoading, error } = useQuery({
+    queryKey: ["posts", selectedCategory, search],
+    queryFn: () =>
+      fetchPosts({
+        category: selectedCategory || undefined,
+        search: search || undefined,
+      }),
+  });
+
   const filtered = useMemo(() => {
-    return posts.filter((p) => {
-      const matchCat = !selectedCategory || p.category === selectedCategory;
-      const matchSearch =
-        !search ||
-        p.title.toLowerCase().includes(search.toLowerCase()) ||
-        p.content.toLowerCase().includes(search.toLowerCase());
-      return matchCat && matchSearch;
-    });
-  }, [posts, selectedCategory, search]);
+    // Since the backend filters, we don't need to filter again on the frontend
+    return posts;
+  }, [posts]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,7 +61,19 @@ const Index = () => {
 
         {/* Posts */}
         <div className="space-y-4">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="rounded-lg border border-dashed border-border p-12 text-center">
+              <p className="font-display text-muted-foreground">
+                Loading posts...
+              </p>
+            </div>
+          ) : error ? (
+            <div className="rounded-lg border border-dashed border-border p-12 text-center">
+              <p className="font-display text-destructive">
+                Error loading posts. Please try again.
+              </p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border p-12 text-center">
               <p className="font-display text-muted-foreground">
                 No posts found.

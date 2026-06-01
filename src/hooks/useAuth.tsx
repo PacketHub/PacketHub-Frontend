@@ -5,6 +5,7 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { getSession, logout as apiLogout } from "@/lib/api";
 
 interface AuthContextType {
   user: { email: string } | null;
@@ -24,12 +25,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check session on mount
   useEffect(() => {
-    setLoading(false);
+    const checkSession = async () => {
+      try {
+        const session = await getSession();
+        setUser(session?.user || null);
+      } catch (error) {
+        console.error("Failed to fetch session:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
   }, []);
 
   const signOut = async () => {
-    setUser(null);
+    try {
+      await apiLogout();
+    } catch (error) {
+      console.error("Failed to logout:", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
